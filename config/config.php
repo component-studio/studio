@@ -4,5 +4,5 @@
  * You can place your custom package configuration in here.
  */
 return [
-
+    'folder' => 'views/components',
 ];

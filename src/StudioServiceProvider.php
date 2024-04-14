@@ -3,6 +3,8 @@
 namespace Componentstudio\Studio;
 
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
+use Componentstudio\Studio\Livewire\ComponentStage;
 
 class StudioServiceProvider extends ServiceProvider
 {
@@ -15,11 +17,14 @@ class StudioServiceProvider extends ServiceProvider
          * Optional methods to load your package assets
          */
         // $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'studio');
-        // $this->loadViewsFrom(__DIR__.'/../resources/views', 'studio');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'studio');
         // $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
-        // $this->loadRoutesFrom(__DIR__.'/routes.php');
+        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+
+        Livewire::component('component-stage', ComponentStage::class);
 
         if ($this->app->runningInConsole()) {
+
             $this->publishes([
                 __DIR__.'/../config/config.php' => config_path('studio.php'),
             ], 'config');
