@@ -32,11 +32,11 @@
                                 $relativePath = substr($file->getPathname(), strlen($dir));
                                 if (in_array($relativePath, ['/.', '/..'])) continue;
                                 $components[ltrim($relativePath, '/')] = [];
-                            } else if ($file->getExtension() == 'yml') {
+                            } else if ($file->getExtension() == 'php') {
                                 $relativePath = substr($file->getPathname(), strlen($dir));
                                 $relativeDir = dirname($relativePath);
                                 if (in_array($relativeDir, ['/.', '/..'])) continue;
-                                $components[ltrim($relativeDir, '/')][] = str_replace('.yml', '', basename($relativePath));
+                                $components[ltrim($relativeDir, '/')][] = str_replace('.blade.php', '', basename($relativePath));
                             }
                         }
 
@@ -51,7 +51,7 @@
                     }
                 }
 
-                $dir = resource_path(config('studio.folder'));
+                $dir = resource_path(config('componentstudio.folder'));
                 $components = scanDirectory($dir);
                 $activeComponent = request()->has('component') ? request()->get('component') : '';
                 $activeFolder = explode('.', $activeComponent)[0];
@@ -98,7 +98,7 @@
 
                         <div @if($subfolder) x-show="open" x-collapse x-cloak @endif>
                             @foreach($files as $file)
-                                <a href="{{ config('studio.url' ) }}?component={{ $folder . '.' . $file }}" wire:navigate class="@if($activeComponent == $folder . '.' . $file){{ 'bg-blue-500 text-white font-semibold' }}@else{{ 'font-normal text-gray-600 hover:text-gray-800 hover:bg-zinc-200/70' }}@endif @if($subfolder){{ 'pl-8' }}@else{{ 'pl-5' }}@endif pr-5 flex items-center py-1.5 text-sm ">
+                                <a href="{{ config('componentstudio.url' ) }}?component={{ trim($folder . '.' . $file, '.') }}" wire:navigate class="@if($activeComponent == trim($folder . '.' . $file, '.')){{ 'bg-blue-500 text-white font-semibold' }}@else{{ 'font-normal text-gray-600 hover:text-gray-800 hover:bg-zinc-200/70' }}@endif @if($subfolder){{ 'pl-8' }}@else{{ 'pl-5' }}@endif pr-5 flex items-center py-1.5 text-sm ">
                                     <svg class="w-3 h-3 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256"><path d="M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Zm0,177.57-51.77-32.35a8,8,0,0,0-8.48,0L72,209.57V48H184Z"></path></svg>
                                     <span>{{ $file }}</span>
                                 </a>

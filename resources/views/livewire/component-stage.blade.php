@@ -1,8 +1,9 @@
 <div class="h-full w-full flex flex-col split" wire:ignore.self x-cloak>
-    @if(!is_null($componentFile))
+    @if(!empty($componentCode))
         <div id="stage" wire:key="stage" class="w-full h-auto flex-1 flex items-center justify-center relative" wire:ignore.self>
-
-                {!! \Blade::render($componentCode, $studioData['args']) !!}
+			<div class="relative w-full">
+                {!! \Blade::render($componentCode, $dataArray) !!}
+			</div>
 				{{-- @if($componentLocation)
 					<x-dynamic-component :component="$componentLocation" :attributes="($attributeArray != null) ? new Illuminate\View\ComponentAttributeBag($attributeArray) : ''">{{ $slotData }}</x-dynamic-component>
 				@endif --}}
@@ -15,12 +16,12 @@
                 </div>
             </div>
         </div><div id="gutter" wire:key="gutter" class="gutter gutter-vertical" style="height: 10px;" wire:ignore></div><div id="toolbox" wire:key="toolbox" class="relative w-full" wire:ignore.self>
-            @include('studio::partials.component-toolbox')
+            @include('componentstudio::partials.component-toolbox')
         </div>
     @else
         <div class="flex flex-col items-center h-full justify-center">
             <p class="font-semibold mb-2">No component found for {{ $componentFile }}</p>
-            <p class="text-sm text-zinc-500">Make sure that component YAML file exists at {{ 'resources/' . (config('componentstudio.folder')) . '/' . $componentFile . '.yml' }}</p>
+            <p class="text-sm text-zinc-500">Make sure the component exists at {{ 'resources/' . (config('componentstudio.folder')) . '/' . $componentFile . '.blade.php' }}, and is not empty.</p>
         </div>
     @endif
 </div>

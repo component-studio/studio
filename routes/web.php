@@ -2,5 +2,5 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::view('components', 'studio::components')->middleware('web');
-Route::view('test/components', 'studio::components')->middleware('web');
+Route::view('components', 'componentstudio::components')->middleware('web');
+Route::view('test/components', 'componentstudio::components')->middleware('web');

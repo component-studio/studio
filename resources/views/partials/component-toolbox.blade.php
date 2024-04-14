@@ -5,7 +5,7 @@
         <li><button data-name="code" @click="tab=$el.dataset.name" :class="{ 'border-blue-500 text-zinc-700' : tab == $el.dataset.name, 'border-transparent' : tab != $el.dataset.name }" class="px-4 h-full border-b-2">Code</button></li>
     </ul>
     <div class="relative h-full overflow-scroll">
-    @include('studio::partials.toolbox.controls')
-    @include('studio::partials.toolbox.code')
+    @include('componentstudio::partials.toolbox.controls')
+    @include('componentstudio::partials.toolbox.code')
     </div>
 </div>
