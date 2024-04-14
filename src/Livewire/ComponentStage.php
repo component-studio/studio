@@ -22,6 +22,8 @@ class ComponentStage extends Component
     public $studioData;
     public $componentProps;
     public $props;
+	public $componentCode;
+	public $data;
 
     public function mount(){
         $this->componentFile = request()->has('component') ? request()->get('component') : '';
@@ -31,32 +33,59 @@ class ComponentStage extends Component
 
         //$this->props = $this->componentProps;
 
+		$component_path = resource_path(config('studio.folder') . '/' . str_replace('.', '/', $this->componentFile) . '.blade.php');
+
+
+		$contents = file_get_contents($component_path);
+
+		preg_match('/@studio[ \t]*\(\[(.*)\]\)/sU', $contents, $matches);
+
+		if (!filled($matches)) {
+            return [];
+        }
+
+		$component_code_only = str_replace($matches, '', $contents);
+
+        $component_code_only = trim($component_code_only);
+
+		$this->componentCode = $component_code_only;
+
+
+		$this->studioData = eval("return [{$matches[1]}];");
+
+
+
+		// $rendered = Blade::render($contents);
+		// dd($rendered);
+
+		// dd($contents);
 
         // if the file exists
-        $component_yaml_path = resource_path(config('studio.folder') . '/' . str_replace('.', '/', $this->componentFile) . '.yml');
+
+		// $component_yaml_path = resource_path(config('studio.folder') . '/' . str_replace('.', '/', $this->componentFile) . '.yml');
 
 
-        if(!file_exists($component_yaml_path)){
-            $this->yaml = null;
-            return;
-        }
+        // if(!file_exists($component_yaml_path)){
+        //     $this->yaml = null;
+        //     return;
+        // }
 
-        $this->yaml_file = file_get_contents($component_yaml_path);
-        $this->yaml = Yaml::parse($this->yaml_file);
-        $this->componentLocation = $this->yaml['component'];
-        // dd('wtf');
-        // dd($this->componentLocation);
+        // $this->yaml_file = file_get_contents($component_yaml_path);
+        // $this->yaml = Yaml::parse($this->yaml_file);
+        // $this->componentLocation = $this->yaml['component'];
+        // // dd('wtf');
+        // // dd($this->componentLocation);
 
-        if(!isset($this->yaml['props']['class'])){
-            $this->addClassProp();
-        }
+        // if(!isset($this->yaml['props']['class'])){
+        //     $this->addClassProp();
+        // }
 
-        $this->fillDefaultAttributeValues();
-        $this->loadAttributes();
+        // $this->fillDefaultAttributeValues();
+        // $this->loadAttributes();
 
 
-        $this->loadSlots($this->yaml);
-        $this->generateCode();
+        // $this->loadSlots($this->yaml);
+        // $this->generateCode();
 
 
 

@@ -5,6 +5,7 @@ namespace Componentstudio\Studio;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 use Componentstudio\Studio\Livewire\ComponentStage;
+use Illuminate\Support\Facades\Blade;
 
 class StudioServiceProvider extends ServiceProvider
 {
@@ -47,6 +48,26 @@ class StudioServiceProvider extends ServiceProvider
             // Registering package commands.
             // $this->commands([]);
         }
+
+		// Blade::directive('studio', function ($expression) {
+		// 	// Parse the expression
+		// 	$args = str_getcsv($expression, ',');
+
+		// 	//dd($args);
+
+		// 	// Trim and remove quotes from each argument
+		// 	$args = array_map(function ($arg) {
+		// 		return trim($arg, " '\"");
+		// 	}, $args);
+
+		// 	dd($args);
+		// 	// Return the array
+		/* 	return "<?php return [" . implode(', ', $args) . "]; ?>";
+		// });*/
+
+		Blade::directive('studio', function ($expression) {
+			return "";
+        });
     }
 
     /**
