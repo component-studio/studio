@@ -12,7 +12,7 @@
         <link href="https://fonts.bunny.net/css?family=epilogue:300,500,700&display=swap" rel="stylesheet" />
         <script src="https://cdn.tailwindcss.com"></script>
         <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @vite(['packages/componentstudio/studio/resources/css/app.css', 'packages/componentstudio/studio/resources/js/app.js'])
     </head>
     <body class="font-sans antialiased bg-zinc-50 h-full flex items-stretch">
         <div class="w-64 bg-zinc-50 fixed h-screen">
@@ -22,24 +22,92 @@
             </div>
 
             <?php
-                $dir = resource_path(config('studio.folder'));
-                $files = scandir($dir);
+                if(!function_exists('scanDirectory')){
+                    function scanDirectory($dir) {
+                        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir), RecursiveIteratorIterator::SELF_FIRST);
+                        $components = [];
 
-                $components = [];
-                foreach ($files as $file) {
-                    if($file == '.' || $file == '..') continue;
-                    if (pathinfo($file, PATHINFO_EXTENSION) == 'php') {
-                        array_push($components, str_replace('.blade.php', '', $file));
+                        foreach ($iterator as $file) {
+                            if ($file->isDir()) {
+                                $relativePath = substr($file->getPathname(), strlen($dir));
+                                if (in_array($relativePath, ['/.', '/..'])) continue;
+                                $components[ltrim($relativePath, '/')] = [];
+                            } else if ($file->getExtension() == 'yml') {
+                                $relativePath = substr($file->getPathname(), strlen($dir));
+                                $relativeDir = dirname($relativePath);
+                                if (in_array($relativeDir, ['/.', '/..'])) continue;
+                                $components[ltrim($relativeDir, '/')][] = str_replace('.yml', '', basename($relativePath));
+                            }
+                        }
+
+                        // Sort directories before files
+                        uksort($components, function($a, $b) {
+                            if ($a == '/' || $a == '.') return 1;
+                            if ($b == '/' || $b == '.') return -1;
+                            return count(explode(DIRECTORY_SEPARATOR, $a)) - count(explode(DIRECTORY_SEPARATOR, $b));
+                        });
+
+                        return $components;
                     }
                 }
 
-
+                $dir = resource_path(config('studio.folder'));
+                $components = scanDirectory($dir);
                 $activeComponent = request()->has('component') ? request()->get('component') : '';
-            ?>
 
-            @foreach($components as $component)
-                <a href="/components?component={{ $component }}" wire:navigate class="@if($activeComponent == $component){{ 'bg-blue-500 text-white font-semibold' }}@else{{ 'font-normal text-gray-600 hover:text-gray-800 hover:bg-zinc-100' }}@endif px-5 block py-1 text-sm ">{{ $component }}</a>
-            @endforeach
+                $activeFolder = explode('.', $activeComponent)[0];
+
+                $componentOrganizedInFolder = [];
+                $componentOrganizedRoot = [];
+                foreach($components as $folder => $file){
+                    if(!Str::endsWith($folder, ['/.', '/..'])){
+                        if($folder == ''){
+                            $componentOrganizedRoot[$folder] = $file;
+                        } else {
+                            $componentOrganized[$folder] = $file;
+                        }
+                    }
+                }
+
+                $components = [...$componentOrganized, ...$componentOrganizedRoot];
+            ?>
+            {{-- @dd($components); --}}
+
+
+
+            <div class="select-none">
+                @foreach($components as $folder => $files)
+                    @php
+                        $subfolder = false;
+                        if($folder != ''){ $subfolder = true; }
+                        $isActiveFolder = $activeFolder == $folder ? 'true' : 'false';
+                    @endphp
+
+                    @if($subfolder)
+                        <div x-data="{ open: {{ $isActiveFolder }} }" class="mb-5 border-t border-b border-zinc-200">
+                            <h2 @click="open=!open" :class="{ 'bg-blue-600 text-white font-bold' : open }" class="folder-name cursor-pointer text-sm px-5 py-2 flex items-center">
+                                <x-phosphor-folder class="w-3 h-3 mr-1.5" x-show="!open" x-cloak />
+                                <x-phosphor-folder-open class="w-3 h-3 mr-1.5" x-show="open" x-cloak />
+
+                                {{-- <svg :class="{ 'rotate-90' : open }" class="w-4 h-4 ease-out duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4"><path fill-rule="evenodd" d="M6.22 4.22a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.75.75 0 0 1-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg> --}}
+                                <span>{{ $folder }}</span>
+                            </h1>
+                    @endif
+
+                        <div @if($subfolder) x-show="open" x-collapse x-cloak @endif>
+                            @foreach($files as $file)
+                                <a href="/components?component={{ $folder . '.' . $file }}" wire:navigate class="@if($activeComponent == $folder . '.' . $file){{ 'bg-blue-500 text-white font-semibold' }}@else{{ 'font-normal text-gray-600 hover:text-gray-800 hover:bg-zinc-200/70' }}@endif @if($subfolder){{ 'pl-8' }}@else{{ 'pl-5' }}@endif pr-5 flex items-center py-1.5 text-sm ">
+                                    <x-phosphor-bookmark-simple class="w-3 h-3 mr-1.5" />
+                                    <span>{{ $file }}</span>
+                                </a>
+                            @endforeach
+                        </div>
+
+                    @if($subfolder)
+                        </div>
+                    @endif
+                @endforeach
+            </div>
 
         </div>
 

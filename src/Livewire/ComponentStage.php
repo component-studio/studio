@@ -25,29 +25,31 @@ class ComponentStage extends Component
 
     public function mount(){
         $this->componentFile = request()->has('component') ? request()->get('component') : '';
-        $this->studioData = $this->getStudioData($this->componentFile);
-        $this->componentProps = $this->getComponentProps($this->componentFile);
+       // $this->studioData = $this->getStudioData($this->componentFile);
+        //$this->componentProps = $this->getComponentProps($this->componentFile);
         //dd($this->componentProps);
 
-        $this->props = $this->componentProps;
+        //$this->props = $this->componentProps;
 
 
         // if the file exists
-        //$component_yaml_path = resource_path(config('componentstudio.folder') . '/' . $this->componentFile.'.yml');
+        $component_yaml_path = resource_path(config('studio.folder') . '/' . str_replace('.', '/', $this->componentFile) . '.yml');
 
 
-        // if(!file_exists($component_yaml_path)){
-        //     $this->yaml = null;
-        //     return;
-        // }
+        if(!file_exists($component_yaml_path)){
+            $this->yaml = null;
+            return;
+        }
 
-        // $this->yaml_file = file_get_contents(resource_path(config('componentstudio.folder') . '/' . $this->componentFile.'.yml'));
-        // $this->yaml = Yaml::parse($this->yaml_file);
-        // $this->componentLocation = $this->yaml['component'];
+        $this->yaml_file = file_get_contents($component_yaml_path);
+        $this->yaml = Yaml::parse($this->yaml_file);
+        $this->componentLocation = $this->yaml['component'];
+        // dd('wtf');
+        // dd($this->componentLocation);
 
-        // if(!isset($this->yaml['props']['class'])){
-        //     $this->addClassProp();
-        // }
+        if(!isset($this->yaml['props']['class'])){
+            $this->addClassProp();
+        }
 
         $this->fillDefaultAttributeValues();
         $this->loadAttributes();
@@ -62,7 +64,7 @@ class ComponentStage extends Component
 
     private function getComponentProps($componentFile){
         $componentFile = str_replace('.', '/', $componentFile);
-        $fileContent = file_get_contents(resource_path('views/components/' . $componentFile . '.blade.php'));
+        $fileContent = file_get_contents(resource_path(config('studio.folder') . $componentFile . '.blade.php'));
         preg_match_all('/@props\((.*?)\)/s', $fileContent, $matches);
         if($matches[1] == null) return null;
         $propsData = $matches[1][0];
@@ -71,7 +73,7 @@ class ComponentStage extends Component
 
     private function getStudioData($componentFile){
         $componentFile = str_replace('.', '/', $componentFile);
-        $fileContent = file_get_contents(resource_path('views/components/' . $componentFile . '.blade.php'));
+        $fileContent = file_get_contents(resource_path(config('studio.folder') . $componentFile . '.blade.php'));
         preg_match_all('/@studio\((.*?)\)/s', $fileContent, $matches);
         if($matches[1] == null) return null;
         $studioData = $matches[1][0];
@@ -120,9 +122,9 @@ class ComponentStage extends Component
 
     public function fillDefaultAttributeValues(){
         $this->attributeValues = [];
-        if(!isset($this->props)) return;
-        foreach ($this->props as $prop => $value) {
-            $this->attributeValues[$prop] = $value;
+        if(!isset($this->yaml['props'])) return;
+        foreach ($this->yaml['props'] as $prop => $details) {
+            $this->attributeValues[$prop] = $details['default'];
         }
     }
 
@@ -148,11 +150,8 @@ class ComponentStage extends Component
     }
 
     public function loadAttributes(){
-        // $this->attributeArray['class'] = '';
-        // if(!isset($this->yaml['props'])) return;
-        // Loop through the props and add them to the attributes array
-        if(!isset($this->props)) return;
-        foreach ($this->props as $prop => $value) {
+        if(!isset($this->yaml['props'])) return;
+        foreach ($this->yaml['props'] as $prop => $details) {
             $this->attributeArray[$prop] = $this->attributeValues[$prop];
         }
     }

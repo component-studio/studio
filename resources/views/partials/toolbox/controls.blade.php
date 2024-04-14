@@ -15,13 +15,13 @@
         'options' => null
     ])
 
-    @isset($props)
-        @foreach($props as $prop => $value)
+    @isset($this->yaml['props'])
+        @foreach($this->yaml['props'] as $prop => $details)
             @include('studio::partials.toolbox.control-row', [
                 'prop' => $prop,
                 'description' => 'the description',
                 'default' => 'default value',
-                'type' => 'text',
+                'type' => $details['type'] ?? 'text',
                 'model' => 'attributeValues.' . $prop,
                 'options' => ($details['options'] ?? null)
             ])

@@ -2,7 +2,7 @@
     @if(!is_null($componentFile))
         <div id="stage" wire:key="stage" class="w-full h-auto flex-1 flex items-center justify-center relative" wire:ignore.self>
             <div class="relative">
-                <x-dynamic-component :component="$componentFile" :attributes="($attributeArray != null) ? new Illuminate\View\ComponentAttributeBag($attributeArray) : ''">{{ $slotData }}</x-dynamic-component>
+                <x-dynamic-component :component="$componentLocation" :attributes="($attributeArray != null) ? new Illuminate\View\ComponentAttributeBag($attributeArray) : ''">{{ $slotData }}</x-dynamic-component>
                 {{-- <x-dynamic-component :component="$componentFile">{{ $slotData }}</x-dynamic-component> --}}
             </div>
             <div wire:loading.delay class="w-auto absolute bottom-0 right-0 text-white mb-2 mr-2 text-xs font-semibold bg-black/50 rounded flex items-center justify-center">
