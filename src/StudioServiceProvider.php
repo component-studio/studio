@@ -29,41 +29,7 @@ class StudioServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../config/config.php' => config_path('componentstudio.php'),
             ], 'config');
-
-            // Publishing the views.
-            /*$this->publishes([
-                __DIR__.'/../resources/views' => resource_path('views/vendor/studio'),
-            ], 'views');*/
-
-            // Publishing assets.
-            /*$this->publishes([
-                __DIR__.'/../resources/assets' => public_path('vendor/studio'),
-            ], 'assets');*/
-
-            // Publishing the translation files.
-            /*$this->publishes([
-                __DIR__.'/../resources/lang' => resource_path('lang/vendor/studio'),
-            ], 'lang');*/
-
-            // Registering package commands.
-            // $this->commands([]);
         }
-
-		// Blade::directive('studio', function ($expression) {
-		// 	// Parse the expression
-		// 	$args = str_getcsv($expression, ',');
-
-		// 	//dd($args);
-
-		// 	// Trim and remove quotes from each argument
-		// 	$args = array_map(function ($arg) {
-		// 		return trim($arg, " '\"");
-		// 	}, $args);
-
-		// 	dd($args);
-		// 	// Return the array
-		/* 	return "<?php return [" . implode(', ', $args) . "]; ?>";
-		// });*/
 
 		Blade::directive('studio', function ($expression) {
 			return "";

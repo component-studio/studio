@@ -6,15 +6,6 @@
         <div>Controls</div>
     </div>
 
-    {{-- @include('componentstudio::partials.toolbox.control-row', [
-        'prop' => 'slot',
-        'description' => 'The main slot area of the element',
-        'default' => 'Default Value',
-        'type' => 'text',
-        'model' => 'slotData',
-        'options' => null
-    ]) --}}
-
     @isset($dataArray)
         @foreach($dataArray as $key => $value)
             @include('componentstudio::partials.toolbox.control-row', [
