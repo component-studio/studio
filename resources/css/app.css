@@ -1,3 +1,4 @@
+@import '../../../../../resources/css/component-styles.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -31,7 +32,7 @@ Visual Studio-like style based on original C# coloring by Jason Diamond <jason@d
 
 */
 .hljs {
-    color: black;
+    color: #8a8a8f;
   }
 
   .hljs-comment,

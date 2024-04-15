@@ -1,5 +1,5 @@
-<x-studio::layout>
+<x-componentstudio::layout>
 
     <livewire:component-stage />
 
-</x-studio::layout>
+</x-componentstudio::layout>

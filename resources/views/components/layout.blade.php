@@ -22,6 +22,7 @@
             </div>
 
             <?php
+
                 if(!function_exists('scanDirectory')){
                     function scanDirectory($dir) {
                         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir), RecursiveIteratorIterator::SELF_FIRST);
@@ -32,11 +33,11 @@
                                 $relativePath = substr($file->getPathname(), strlen($dir));
                                 if (in_array($relativePath, ['/.', '/..'])) continue;
                                 $components[ltrim($relativePath, '/')] = [];
-                            } else if ($file->getExtension() == 'yml') {
+                            } else if ($file->getExtension() == 'php') {
                                 $relativePath = substr($file->getPathname(), strlen($dir));
                                 $relativeDir = dirname($relativePath);
                                 if (in_array($relativeDir, ['/.', '/..'])) continue;
-                                $components[ltrim($relativeDir, '/')][] = str_replace('.yml', '', basename($relativePath));
+                                $components[ltrim($relativeDir, '/')][] = str_replace('.blade.php', '', basename($relativePath));
                             }
                         }
 
@@ -51,25 +52,26 @@
                     }
                 }
 
-                $dir = resource_path(config('studio.folder'));
+                $dir = resource_path(config('componentstudio.folder'));
                 $components = scanDirectory($dir);
                 $activeComponent = request()->has('component') ? request()->get('component') : '';
-
                 $activeFolder = explode('.', $activeComponent)[0];
 
-                $componentOrganizedInFolder = [];
-                $componentOrganizedRoot = [];
-                foreach($components as $folder => $file){
-                    if(!Str::endsWith($folder, ['/.', '/..'])){
-                        if($folder == ''){
-                            $componentOrganizedRoot[$folder] = $file;
-                        } else {
-                            $componentOrganized[$folder] = $file;
-                        }
-                    }
-                }
+				if(!empty($components)){
+					$componentOrganizedInFolder = [];
+					$componentOrganizedRoot = [];
+					foreach($components as $folder => $file){
+						if(!Str::endsWith($folder, ['/.', '/..'])){
+							if($folder == ''){
+								$componentOrganizedRoot[$folder] = $file;
+							} else {
+								$componentOrganizedInFolder[$folder] = $file;
+							}
+						}
+					}
 
-                $components = [...$componentOrganized, ...$componentOrganizedRoot];
+					$components = [...$componentOrganizedInFolder, ...$componentOrganizedRoot];
+				}
             ?>
             {{-- @dd($components); --}}
 
@@ -86,8 +88,9 @@
                     @if($subfolder)
                         <div x-data="{ open: {{ $isActiveFolder }} }" class="mb-5 border-t border-b border-zinc-200">
                             <h2 @click="open=!open" :class="{ 'bg-blue-600 text-white font-bold' : open }" class="folder-name cursor-pointer text-sm px-5 py-2 flex items-center">
-                                <x-phosphor-folder class="w-3 h-3 mr-1.5" x-show="!open" x-cloak />
-                                <x-phosphor-folder-open class="w-3 h-3 mr-1.5" x-show="open" x-cloak />
+                                <svg class="w-3 h-3 mr-1.5" x-show="!open" x-cloak xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256"><path d="M216,72H131.31L104,44.69A15.86,15.86,0,0,0,92.69,40H40A16,16,0,0,0,24,56V200.62A15.4,15.4,0,0,0,39.38,216H216.89A15.13,15.13,0,0,0,232,200.89V88A16,16,0,0,0,216,72ZM40,56H92.69l16,16H40ZM216,200H40V88H216Z"></path></svg>
+								<svg lass="w-3 h-3 mr-1.5" x-show="open" x-cloak xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256"><path d="M245,110.64A16,16,0,0,0,232,104H216V88a16,16,0,0,0-16-16H130.67L102.94,51.2a16.14,16.14,0,0,0-9.6-3.2H40A16,16,0,0,0,24,64V208h0a8,8,0,0,0,8,8H211.1a8,8,0,0,0,7.59-5.47l28.49-85.47A16.05,16.05,0,0,0,245,110.64ZM93.34,64,123.2,86.4A8,8,0,0,0,128,88h72v16H69.77a16,16,0,0,0-15.18,10.94L40,158.7V64Zm112,136H43.1l26.67-80H232Z"></path></svg>
+
 
                                 {{-- <svg :class="{ 'rotate-90' : open }" class="w-4 h-4 ease-out duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4"><path fill-rule="evenodd" d="M6.22 4.22a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.75.75 0 0 1-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg> --}}
                                 <span>{{ $folder }}</span>
@@ -96,8 +99,8 @@
 
                         <div @if($subfolder) x-show="open" x-collapse x-cloak @endif>
                             @foreach($files as $file)
-                                <a href="/components?component={{ $folder . '.' . $file }}" wire:navigate class="@if($activeComponent == $folder . '.' . $file){{ 'bg-blue-500 text-white font-semibold' }}@else{{ 'font-normal text-gray-600 hover:text-gray-800 hover:bg-zinc-200/70' }}@endif @if($subfolder){{ 'pl-8' }}@else{{ 'pl-5' }}@endif pr-5 flex items-center py-1.5 text-sm ">
-                                    <x-phosphor-bookmark-simple class="w-3 h-3 mr-1.5" />
+                                <a href="{{ config('componentstudio.url' ) }}?component={{ trim($folder . '.' . $file, '.') }}" wire:navigate class="@if($activeComponent == trim($folder . '.' . $file, '.')){{ 'bg-blue-500 text-white font-semibold' }}@else{{ 'font-normal text-gray-600 hover:text-gray-800 hover:bg-zinc-200/70' }}@endif @if($subfolder){{ 'pl-8' }}@else{{ 'pl-5' }}@endif pr-5 flex items-center py-1.5 text-sm ">
+                                    <svg class="w-3 h-3 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256"><path d="M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Zm0,177.57-51.77-32.35a8,8,0,0,0-8.48,0L72,209.57V48H184Z"></path></svg>
                                     <span>{{ $file }}</span>
                                 </a>
                             @endforeach

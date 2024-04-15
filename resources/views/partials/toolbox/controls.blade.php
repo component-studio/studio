@@ -6,24 +6,25 @@
         <div>Controls</div>
     </div>
 
-    @include('studio::partials.toolbox.control-row', [
+    {{-- @include('componentstudio::partials.toolbox.control-row', [
         'prop' => 'slot',
         'description' => 'The main slot area of the element',
         'default' => 'Default Value',
         'type' => 'text',
         'model' => 'slotData',
         'options' => null
-    ])
+    ]) --}}
 
-    @isset($this->yaml['props'])
-        @foreach($this->yaml['props'] as $prop => $details)
-            @include('studio::partials.toolbox.control-row', [
-                'prop' => $prop,
-                'description' => 'the description',
-                'default' => 'default value',
-                'type' => $details['type'] ?? 'text',
-                'model' => 'attributeValues.' . $prop,
-                'options' => ($details['options'] ?? null)
+    @isset($dataArray)
+        @foreach($dataArray as $key => $value)
+            @include('componentstudio::partials.toolbox.control-row', [
+				'key' => $key,
+				'value' => $value,
+                'description' => $dataDetails[$key]['description'] ?? '',
+                'default' => $dataDefaultValue[$key] ?? '',
+                'type' => $dataDetails[$key]['control'] ?? 'text',
+                'model' => 'dataValues.' . $key,
+                'options' => ($dataDetails[$key]['options'] ?? null)
             ])
         @endforeach
     @endisset
