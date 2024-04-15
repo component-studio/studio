@@ -22,6 +22,7 @@
             </div>
 
             <?php
+
                 if(!function_exists('scanDirectory')){
                     function scanDirectory($dir) {
                         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir), RecursiveIteratorIterator::SELF_FIRST);

@@ -19,9 +19,25 @@
                 <input type="number" wire:model="{{ $model }}" class="form-input rounded-lg border border-zinc-300 w-full" placeholder="{{ $value }}">
         @elseif($type == 'select')
 
+			@php
+				if(!function_exists('isAssociativeArray')){
+					function isAssociativeArray(array $array) {
+						// Check if all keys are integers and in sequence starting from 0
+						$keys = array_keys($array);
+						foreach ($keys as $key) {
+							if (!is_int($key)) {
+								return true; // It's associative if any key is a string
+							}
+						}
+						return $keys !== range(0, count($array) - 1);
+					}
+				}
+			@endphp
+
             <select wire:model.live="{{ $model }}" class="form-select rounded-lg border border-zinc-300 w-full">
-                @foreach($options as $option)
-                    <option value="{{ $option }}">{{ $option }}</option>
+				@php $isAssociative = isAssociativeArray($options); @endphp
+                @foreach($options as $key => $value)
+                    <option value="@if($isAssociative){{ $key }}@else{{ $value }}@endif">{{ $value }}</option>
                 @endforeach
             </select>
         @endif

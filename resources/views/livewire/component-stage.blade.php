@@ -1,9 +1,9 @@
 <div class="h-full w-full flex flex-col split" wire:ignore.self x-cloak>
     @if(!empty($componentCode))
-        <div id="stage" wire:key="stage" class="w-full h-auto flex-1 flex items-center justify-center relative" wire:ignore.self>
-			<div class="relative w-full">
+        <div id="stage" wire:key="stage" class="w-full h-auto flex-1 flex items-center justify-center flex-col relative" wire:ignore.self>
+
                 {!! \Blade::render($componentCode, $dataArray) !!}
-			</div>
+
 				{{-- @if($componentLocation)
 					<x-dynamic-component :component="$componentLocation" :attributes="($attributeArray != null) ? new Illuminate\View\ComponentAttributeBag($attributeArray) : ''">{{ $slotData }}</x-dynamic-component>
 				@endif --}}

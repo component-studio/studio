@@ -61,6 +61,7 @@ class ComponentStage extends Component
 		$this->fillDefaultDataDetails();
 		$this->loadDataValues();
 		$this->generateCode();
+
     }
 
 	private function fillDefaultDataDetails(){
@@ -69,8 +70,9 @@ class ComponentStage extends Component
 			if(!isset($this->dataDetails[$key]) || !isset($this->dataDetails[$key]['control'])){
 				if(is_bool($value)){
 					$this->dataDetails[$key]['control'] = 'boolean';
+				} else {
+					$this->dataDetails[$key]['control'] = 'text';
 				}
-				$this->dataDetails[$key]['control'] = 'text';
 			}
 		}
 	}
@@ -142,6 +144,7 @@ class ComponentStage extends Component
         $this->code .= "\n>" . $slotContent . "</".$tag.">";
 
     }
+
 
     public function render()
     {
