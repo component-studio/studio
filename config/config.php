@@ -5,5 +5,5 @@
  */
 return [
 	'url' => '/components',
-    'folder' => 'components',
+    'folder' => 'views/components',
 ];

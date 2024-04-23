@@ -33,6 +33,10 @@ class ComponentStage extends Component
     public function mount(){
         $this->componentFile = request()->has('component') ? request()->get('component') : '';
 
+        if(!filled($this->componentFile)){
+            $this->componentFile = 'alert';
+        }
+
 		$component_path = resource_path(config('componentstudio.folder') . '/' . str_replace('.', '/', $this->componentFile) . '.blade.php');
 
 
