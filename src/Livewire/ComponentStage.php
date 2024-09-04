@@ -14,7 +14,7 @@ class ComponentStage extends Component
     public $yaml_file;
     public $yaml;
     public $size;
-    public $slotData = '';
+    public $slotContent = 'asdf';
     public $code = '';
 
 	public $studioArray;
@@ -59,13 +59,14 @@ class ComponentStage extends Component
 		$component_code_only = trim($component_code_only);
 		$this->componentCode = $component_code_only;
 
+        // dd($this->componentCode);
 		// dd($this->componentCode);
 
 		$this->fillDefaultDataValues();
 		$this->fillDefaultDataDetails();
 		$this->loadDataValues();
 		$this->generateCode();
-
+        // dd($this->code);
     }
 
 	private function fillDefaultDataDetails(){
@@ -127,25 +128,15 @@ class ComponentStage extends Component
     public function generateCode(){
         $tag = 'x-'.$this->componentFile;
         $this->code = "<".$tag;
-
-		$slotContent = '';
         if($this->dataArray != null){
             $componentBag = new \Illuminate\View\ComponentAttributeBag($this->dataArray);
 
             foreach($componentBag->getAttributes() as $attribute => $value){
-				if(!isset($this->dataDetails[$attribute]['slot'])){
-                	$this->code .= "\n     " . $attribute.'="'.$value.'"';
-				} else {
-					$slotContent .= $value;
-				}
+                $this->code .= "\n     " . $attribute.'="'.$value.'"';
             }
         }
 
-		if($slotContent != ''){
-			$slotContent = "\n\t" . $slotContent . "\n";
-		}
-
-        $this->code .= "\n>" . $slotContent . "</".$tag.">";
+        $this->code .= "\n>\n\t" . $this->slotContent . "\n</".$tag.">";
 
     }
 

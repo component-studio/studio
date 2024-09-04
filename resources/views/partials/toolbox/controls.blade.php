@@ -1,10 +1,22 @@
-<div x-show="tab=='controls'" class="w-full relative border-t border-zinc-200">
-    <div class="grid bg-zinc-100 grid-cols-4 text-sm py-2 font-medium w-full border-b justify-between px-3">
+<div x-show="tab=='controls'" class="relative w-full border-t border-zinc-200">
+
+
+    <div class="grid justify-between w-full grid-cols-4 px-3 py-2 text-sm font-medium border-b bg-zinc-100">
         <div>Name</div>
         <div>Description</div>
         <div>Default</div>
         <div>Controls</div>
     </div>
+
+    <div class="grid grid-cols-4 px-4 py-3 text-sm text-zinc-500">
+        <p>slot</p>
+        <p>The innerHTML inside the element</p>
+        <p></p>
+        <div class="relative">
+            <textarea wire:model.blur="slotContent"></textarea>
+        </div>
+    </div>
+    
 
     @isset($dataArray)
         @foreach($dataArray as $key => $value)
