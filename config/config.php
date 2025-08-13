@@ -1,9 +1,14 @@
 <?php
 
-/*
- * You can place your custom package configuration in here.
- */
 return [
-	'url' => '/components',
-    'folder' => 'views/components',
+    'url' => '/components',
+    'folder' => 'views/components', // Legacy support
+    
+    'component_sources' => [
+        [
+            'name' => 'Components',
+            'icon' => null,
+            'path' => 'views/components',
+        ],
+    ],
 ];

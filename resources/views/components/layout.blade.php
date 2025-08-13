@@ -29,86 +29,153 @@
                         $components = [];
 
                         foreach ($iterator as $file) {
-                            if ($file->isDir()) {
-                                $relativePath = substr($file->getPathname(), strlen($dir));
-                                if (in_array($relativePath, ['/.', '/..'])) continue;
-                                $components[ltrim($relativePath, '/')] = [];
-                            } else if ($file->getExtension() == 'php') {
-                                $relativePath = substr($file->getPathname(), strlen($dir));
-                                $relativeDir = dirname($relativePath);
-                                if (in_array($relativeDir, ['/.', '/..'])) continue;
-                                $components[ltrim($relativeDir, '/')][] = str_replace('.blade.php', '', basename($relativePath));
+                            if ($file->isFile() && $file->getExtension() === 'php') {
+                                $relativePath = str_replace($dir . DIRECTORY_SEPARATOR, '', $file->getPathname());
+                                $relativePath = str_replace(DIRECTORY_SEPARATOR, '/', $relativePath);
+                                $relativePath = str_replace('.blade.php', '', $relativePath);
+
+                                $pathParts = explode('/', $relativePath);
+                                $filename = array_pop($pathParts);
+                                $folder = implode('/', $pathParts);
+
+                                if (!isset($components[$folder])) {
+                                    $components[$folder] = [];
+                                }
+                                $components[$folder][] = $filename;
                             }
                         }
-
-                        // Sort directories before files
-                        uksort($components, function($a, $b) {
-                            if ($a == '/' || $a == '.') return 1;
-                            if ($b == '/' || $b == '.') return -1;
-                            return count(explode(DIRECTORY_SEPARATOR, $a)) - count(explode(DIRECTORY_SEPARATOR, $b));
-                        });
 
                         return $components;
                     }
                 }
 
-                $dir = resource_path(config('componentstudio.folder'));
-                $components = scanDirectory($dir);
+                if(!function_exists('getComponentSourceName')){
+                    function getComponentSourceName($path) {
+                        $pathParts = explode('/', trim($path, '/'));
+                        return ucfirst(end($pathParts));
+                    }
+                }
+
+                if(!function_exists('getDefaultFolderIcon')){
+                    function getDefaultFolderIcon($isOpen = false) {
+                        if ($isOpen) {
+                            return '<svg class="mr-1.5 w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256"><path d="M245,110.64A16,16,0,0,0,232,104H216V88a16,16,0,0,0-16-16H130.67L102.94,51.2a16.14,16.14,0,0,0-9.6-3.2H40A16,16,0,0,0,24,64V208h0a8,8,0,0,0,8,8H211.1a8,8,0,0,0,7.59-5.47l28.49-85.47A16.05,16.05,0,0,0,245,110.64ZM93.34,64,123.2,86.4A8,8,0,0,0,128,88h72v16H69.77a16,16,0,0,0-15.18,10.94L40,158.7V64Zm112,136H43.1l26.67-80H232Z"></path></svg>';
+                        } else {
+                            return '<svg class="mr-1.5 w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256"><path d="M216,72H131.31L104,44.69A15.86,15.86,0,0,0,92.69,40H40A16,16,0,0,0,24,56V200.62A15.4,15.4,0,0,0,39.38,216H216.89A15.13,15.13,0,0,0,232,200.89V88A16,16,0,0,0,216,72ZM40,56H92.69l16,16H40ZM216,200H40V88H216Z"></path></svg>';
+                        }
+                    }
+                }
+
+                // Get component sources from config
+                $componentSources = config('componentstudio.component_sources', []);
+                
+                // Fallback to legacy config if no component sources defined
+                if (empty($componentSources)) {
+                    $componentSources = [
+                        [
+                            'name' => 'Components',
+                            'icon' => null,
+                            'path' => config('componentstudio.folder', 'views/components')
+                        ]
+                    ];
+                }
+
                 $activeComponent = request()->has('component') ? request()->get('component') : '';
-                $activeFolder = explode('.', $activeComponent)[0];
+                $activeComponentParts = explode('.', $activeComponent);
+                $activeComponentSource = $activeComponentParts[0] ?? '';
+                $activeFolder = implode('.', array_slice($activeComponentParts, 1, -1));
 
-				if(!empty($components)){
-					$componentOrganizedInFolder = [];
-					$componentOrganizedRoot = [];
-					foreach($components as $folder => $file){
-						if(!Str::endsWith($folder, ['/.', '/..'])){
-							if($folder == ''){
-								$componentOrganizedRoot[$folder] = $file;
-							} else {
-								$componentOrganizedInFolder[$folder] = $file;
-							}
-						}
-					}
-
-					$components = [...$componentOrganizedInFolder, ...$componentOrganizedRoot];
-				}
+                $allComponentSources = [];
+                
+                foreach ($componentSources as $source) {
+                    $sourceName = $source['name'] ?? getComponentSourceName($source['path']);
+                    $sourcePath = resource_path($source['path']);
+                    $sourceIcon = $source['icon'] ?? null;
+                    
+                    if (is_dir($sourcePath)) {
+                        $components = scanDirectory($sourcePath);
+                        
+                        if (!empty($components)) {
+                            $componentOrganizedInFolder = [];
+                            $componentOrganizedRoot = [];
+                            
+                            foreach($components as $folder => $files){
+                                if(!Str::endsWith($folder, ['/.', '/..'])){
+                                    if($folder == ''){
+                                        $componentOrganizedRoot[$folder] = $files;
+                                    } else {
+                                        $componentOrganizedInFolder[$folder] = $files;
+                                    }
+                                }
+                            }
+                            
+                            $organizedComponents = [...$componentOrganizedInFolder, ...$componentOrganizedRoot];
+                            
+                            $allComponentSources[] = [
+                                'name' => $sourceName,
+                                'icon' => $sourceIcon,
+                                'components' => $organizedComponents,
+                                'source_key' => strtolower(str_replace(' ', '_', $sourceName))
+                            ];
+                        }
+                    }
+                }
             ?>
-            {{-- @dd($components); --}}
-
-
 
             <div class="select-none">
-                @foreach($components as $folder => $files)
+                @foreach($allComponentSources as $componentSource)
                     @php
-                        $subfolder = false;
-                        if($folder != ''){ $subfolder = true; }
-                        $isActiveFolder = $activeFolder == $folder ? 'true' : 'false';
+                        $sourceKey = $componentSource['source_key'];
+                        $isActiveSource = $activeComponentSource == $sourceKey;
                     @endphp
+                    
+                    <!-- Component Source Group -->
+                    <div x-data="{ open: {{ $isActiveSource ? 'true' : 'false' }} }" class="mb-3">
+                        <h2 @click="open=!open" :class="{ 'bg-blue-600 text-white font-bold' : open }" class="flex items-center px-5 py-2 text-sm border-t border-b cursor-pointer border-zinc-200">
+                            @if($componentSource['icon'])
+                                {!! $componentSource['icon'] !!}
+                            @else
+                                <span x-show="!open" x-cloak>{!! getDefaultFolderIcon(false) !!}</span>
+                                <span x-show="open" x-cloak>{!! getDefaultFolderIcon(true) !!}</span>
+                            @endif
+                            <span>{{ $componentSource['name'] }}</span>
+                        </h2>
+                        
+                        <div x-show="open" x-collapse x-cloak>
+                            @foreach($componentSource['components'] as $folder => $files)
+                                @php
+                                    $subfolder = $folder !== '';
+                                    $isActiveFolder = $activeFolder == $folder;
+                                @endphp
 
-                    @if($subfolder)
-                        <div x-data="{ open: {{ $isActiveFolder }} }" class="mb-5 border-t border-b border-zinc-200">
-                            <h2 @click="open=!open" :class="{ 'bg-blue-600 text-white font-bold' : open }" class="flex items-center px-5 py-2 text-sm cursor-pointer folder-name">
-                                <svg class="mr-1.5 w-3 h-3" x-show="!open" x-cloak xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256"><path d="M216,72H131.31L104,44.69A15.86,15.86,0,0,0,92.69,40H40A16,16,0,0,0,24,56V200.62A15.4,15.4,0,0,0,39.38,216H216.89A15.13,15.13,0,0,0,232,200.89V88A16,16,0,0,0,216,72ZM40,56H92.69l16,16H40ZM216,200H40V88H216Z"></path></svg>
-								<svg class="mr-1.5 w-3 h-3" x-show="open" x-cloak xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256"><path d="M245,110.64A16,16,0,0,0,232,104H216V88a16,16,0,0,0-16-16H130.67L102.94,51.2a16.14,16.14,0,0,0-9.6-3.2H40A16,16,0,0,0,24,64V208h0a8,8,0,0,0,8,8H211.1a8,8,0,0,0,7.59-5.47l28.49-85.47A16.05,16.05,0,0,0,245,110.64ZM93.34,64,123.2,86.4A8,8,0,0,0,128,88h72v16H69.77a16,16,0,0,0-15.18,10.94L40,158.7V64Zm112,136H43.1l26.67-80H232Z"></path></svg>
+                                @if($subfolder)
+                                    <div x-data="{ open: {{ $isActiveFolder ? 'true' : 'false' }} }" class="ml-4 border-l border-zinc-200">
+                                        <h3 @click="open=!open" :class="{ 'bg-blue-500 text-white font-semibold' : open }" class="flex items-center px-4 py-1.5 text-xs cursor-pointer">
+                                            <svg class="mr-1.5 w-3 h-3" x-show="!open" x-cloak xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256"><path d="M216,72H131.31L104,44.69A15.86,15.86,0,0,0,92.69,40H40A16,16,0,0,0,24,56V200.62A15.4,15.4,0,0,0,39.38,216H216.89A15.13,15.13,0,0,0,232,200.89V88A16,16,0,0,0,216,72ZM40,56H92.69l16,16H40ZM216,200H40V88H216Z"></path></svg>
+                                            <svg class="mr-1.5 w-3 h-3" x-show="open" x-cloak xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256"><path d="M245,110.64A16,16,0,0,0,232,104H216V88a16,16,0,0,0-16-16H130.67L102.94,51.2a16.14,16.14,0,0,0-9.6-3.2H40A16,16,0,0,0,24,64V208h0a8,8,0,0,0,8,8H211.1a8,8,0,0,0,7.59-5.47l28.49-85.47A16.05,16.05,0,0,0,245,110.64ZM93.34,64,123.2,86.4A8,8,0,0,0,128,88h72v16H69.77a16,16,0,0,0-15.18,10.94L40,158.7V64Zm112,136H43.1l26.67-80H232Z"></path></svg>
+                                            <span>{{ $folder }}</span>
+                                        </h3>
+                                @endif
 
+                                <div @if($subfolder) x-show="open" x-collapse x-cloak @endif>
+                                    @foreach($files as $file)
+                                        @php
+                                            $folderPath = $folder ? $folder . '/' . $file : $file;
+                                            $componentPath = $sourceKey . '.' . $folderPath;
+                                        @endphp
+                                        <a href="{{ config('componentstudio.url') }}?component={{ $componentPath }}" wire:navigate class="@if($activeComponent == $componentPath){{ 'bg-blue-500 text-white font-semibold' }}@else{{ 'font-normal text-gray-600 hover:text-gray-800 hover:bg-zinc-200/70' }}@endif @if($subfolder){{ 'pl-12' }}@else{{ 'pl-8' }}@endif pr-5 flex items-center py-1.5 text-sm">
+                                            <svg class="mr-1.5 w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256"><path d="M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Zm0,177.57-51.77-32.35a8,8,0,0,0-8.48,0L72,209.57V48H184Z"></path></svg>
+                                            <span>{{ $file }}</span>
+                                        </a>
+                                    @endforeach
+                                </div>
 
-                                {{-- <svg :class="{ 'rotate-90' : open }" class="w-4 h-4 duration-300 ease-out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4"><path fill-rule="evenodd" d="M6.22 4.22a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.75.75 0 0 1-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg> --}}
-                                <span>{{ $folder }}</span>
-                            </h1>
-                    @endif
-
-                        <div @if($subfolder) x-show="open" x-collapse x-cloak @endif>
-                            @foreach($files as $file)
-                                <a href="{{ config('componentstudio.url' ) }}?component={{ trim($folder . '.' . $file, '.') }}" wire:navigate class="@if($activeComponent == trim($folder . '.' . $file, '.')){{ 'bg-blue-500 text-white font-semibold' }}@else{{ 'font-normal text-gray-600 hover:text-gray-800 hover:bg-zinc-200/70' }}@endif @if($subfolder){{ 'pl-8' }}@else{{ 'pl-5' }}@endif pr-5 flex items-center py-1.5 text-sm ">
-                                    <svg class="mr-1.5 w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256"><path d="M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Zm0,177.57-51.77-32.35a8,8,0,0,0-8.48,0L72,209.57V48H184Z"></path></svg>
-                                    <span>{{ $file }}</span>
-                                </a>
+                                @if($subfolder)
+                                    </div>
+                                @endif
                             @endforeach
                         </div>
-
-                    @if($subfolder)
-                        </div>
-                    @endif
+                    </div>
                 @endforeach
             </div>
 

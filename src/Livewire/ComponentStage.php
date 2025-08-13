@@ -25,16 +25,41 @@ class ComponentStage extends Component
 
     public function mount(){
         $this->componentFile = request()->has('component') ? request()->get('component') : '';
-       // $this->studioData = $this->getStudioData($this->componentFile);
-        //$this->componentProps = $this->getComponentProps($this->componentFile);
-        //dd($this->componentProps);
-
-        //$this->props = $this->componentProps;
-
-
-        // if the file exists
-        $component_yaml_path = resource_path(config('componentstudio.folder') . '/' . str_replace('.', '/', $this->componentFile) . '.yml');
-
+        
+        // Parse component source and path
+        $componentParts = explode('.', $this->componentFile);
+        if(count($componentParts) < 2){
+            $sourceKey = 'components';
+            $componentPath = $this->componentFile;
+        } else {
+            $sourceKey = array_shift($componentParts);
+            $componentPath = implode('/', $componentParts);
+        }
+        
+        // Get component sources from config
+        $componentSources = config('componentstudio.component_sources', []);
+        $componentSource = null;
+        
+        foreach($componentSources as $source){
+            $sourceName = $source['name'] ?? $this->getComponentSourceName($source['path']);
+            $sourceKeyFromName = strtolower(str_replace(' ', '_', $sourceName));
+            if($sourceKeyFromName === $sourceKey){
+                $componentSource = $source;
+                break;
+            }
+        }
+        
+        // Fallback to legacy config if source not found
+        if(!$componentSource){
+            $componentSource = [
+                'name' => 'Components',
+                'path' => config('componentstudio.folder', 'views/components')
+            ];
+            $componentPath = str_replace('.', '/', $this->componentFile);
+        }
+        
+        // Build YAML file path
+        $component_yaml_path = resource_path($componentSource['path'] . '/' . $componentPath . '.yml');
 
         if(!file_exists($component_yaml_path)){
             $this->yaml = null;
@@ -60,6 +85,11 @@ class ComponentStage extends Component
 
 
 
+    }
+
+    private function getComponentSourceName($path) {
+        $pathParts = explode('/', trim($path, '/'));
+        return ucfirst(end($pathParts));
     }
 
     private function getComponentProps($componentFile){
@@ -137,7 +167,7 @@ class ComponentStage extends Component
     }
 
     public function generateCode(){
-        $tag = 'x-'.$this->componentFile;
+        $tag = 'x-'.$this->componentLocation;
         $this->code = "<".$tag;
         if($this->attributeArray != null){
             $componentBag = new \Illuminate\View\ComponentAttributeBag($this->attributeArray);
