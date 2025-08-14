@@ -85,24 +85,14 @@
 
                 // Get component sources from config
                 $componentSources = config('componentstudio.component_sources', []);
-                
-                // Fallback to legacy config if no component sources defined
-                if (empty($componentSources)) {
-                    $componentSources = [
-                        [
-                            'name' => 'Components',
-                            'icon' => null,
-                            'path' => config('componentstudio.folder', 'views/components')
-                        ]
-                    ];
-                }
 
                 $activeComponent = request()->has('component') ? request()->get('component') : '';
                 $activeComponentParts = explode('.', $activeComponent);
-                $activeComponentSource = $activeComponentParts[0] ?? '';
-                $activeFolder = implode('.', array_slice($activeComponentParts, 1, -1));
+                $activeFolder = implode('.', array_slice($activeComponentParts, 0, -1));
+                $activeComponentName = end($activeComponentParts);
 
                 $allComponentSources = [];
+                $activeComponentSource = '';
                 
                 foreach ($componentSources as $source) {
                     $sourceName = $source['name'] ?? getComponentSourceName($source['path']);
@@ -127,12 +117,27 @@
                             }
                             
                             $organizedComponents = [...$componentOrganizedInFolder, ...$componentOrganizedRoot];
+                            $sourceKey = strtolower(str_replace(' ', '_', $sourceName));
+                            
+                            // Check if this source contains the active component
+                            if ($activeComponent && !$activeComponentSource) {
+                                foreach ($organizedComponents as $folder => $files) {
+                                    $folderPath = $folder ?: '';
+                                    foreach ($files as $file) {
+                                        $componentPath = $folderPath ? $folderPath . '.' . $file : $file;
+                                        if ($componentPath === $activeComponent) {
+                                            $activeComponentSource = $sourceKey;
+                                            break 2;
+                                        }
+                                    }
+                                }
+                            }
                             
                             $allComponentSources[] = [
                                 'name' => $sourceName,
                                 'icon' => $sourceIcon,
                                 'components' => $organizedComponents,
-                                'source_key' => strtolower(str_replace(' ', '_', $sourceName))
+                                'source_key' => $sourceKey
                             ];
                         }
                     }

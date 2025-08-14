@@ -40,6 +40,7 @@ class ComponentStage extends Component
         // Get component sources from config
         $componentSources = config('componentstudio.component_sources', []);
         $componentSource = null;
+        $componentLocation = '';
 
         //Find the component
         foreach($componentSources as $source){
@@ -70,7 +71,9 @@ class ComponentStage extends Component
 
 
         $this->loadSlots($this->yaml);
-        $this->generateCode();
+        // if($this->code != ''){
+            $this->generateCode();
+        // }
         //dd($this->componentLocation);
         //dd($this->code);
 
