@@ -66,6 +66,23 @@
                     }
                 }
 
+                if(!function_exists('resolveComponentPath')){
+                    function resolveComponentPath($path) {
+                        // If path is already absolute, return as-is
+                        if (str_starts_with($path, '/')) {
+                            return $path;
+                        }
+                        
+                        // If path starts with base_path(), app_path(), resource_path(), etc., return as-is
+                        if (str_contains($path, base_path()) || str_contains($path, app_path()) || str_contains($path, resource_path())) {
+                            return $path;
+                        }
+                        
+                        // Otherwise, treat as relative to project root
+                        return base_path($path);
+                    }
+                }
+
                 // Get component sources from config
                 $componentSources = config('componentstudio.component_sources', []);
                 
@@ -89,7 +106,7 @@
                 
                 foreach ($componentSources as $source) {
                     $sourceName = $source['name'] ?? getComponentSourceName($source['path']);
-                    $sourcePath = resource_path($source['path']);
+                    $sourcePath = resolveComponentPath($source['path']);
                     $sourceIcon = $source['icon'] ?? null;
                     
                     if (is_dir($sourcePath)) {
@@ -160,10 +177,9 @@
                                 <div @if($subfolder) x-show="open" x-collapse x-cloak @endif>
                                     @foreach($files as $file)
                                         @php
-                                            $folderPath = $folder ? $folder . '/' . $file : $file;
-                                            $componentPath = $sourceKey . '.' . $folderPath;
+                                            $folderPath = $folder ? $folder . '.' . $file : $file;
                                         @endphp
-                                        <a href="{{ config('componentstudio.url') }}?component={{ $componentPath }}" wire:navigate class="@if($activeComponent == $componentPath){{ 'bg-blue-500 text-white font-semibold' }}@else{{ 'font-normal text-gray-600 hover:text-gray-800 hover:bg-zinc-200/70' }}@endif @if($subfolder){{ 'pl-12' }}@else{{ 'pl-8' }}@endif pr-5 flex items-center py-1.5 text-sm">
+                                        <a href="{{ config('componentstudio.url') }}?component={{ $folderPath }}" wire:navigate class="@if($activeComponent == $folderPath){{ 'bg-blue-500 text-white font-semibold' }}@else{{ 'font-normal text-gray-600 hover:text-gray-800 hover:bg-zinc-200/70' }}@endif @if($subfolder){{ 'pl-12' }}@else{{ 'pl-8' }}@endif pr-5 flex items-center py-1.5 text-sm">
                                             <svg class="mr-1.5 w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256"><path d="M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Zm0,177.57-51.77-32.35a8,8,0,0,0-8.48,0L72,209.57V48H184Z"></path></svg>
                                             <span>{{ $file }}</span>
                                         </a>

@@ -8,7 +8,7 @@ return [
         [
             'name' => 'Components',
             'icon' => null,
-            'path' => 'views/components',
+            'path' => resource_path('views/components'),
         ],
     ],
 ];

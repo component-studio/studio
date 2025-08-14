@@ -25,12 +25,83 @@ class ComponentStage extends Component
 
     public function mount(){
         $this->componentFile = request()->has('component') ? request()->get('component') : '';
+        //dd($this->componentFile);
         
         // Parse component source and path
-        $componentParts = explode('.', $this->componentFile);
+        // $componentParts = explode('.', $this->componentFile);
+        // if(count($componentParts) < 2){
+        //     $sourceKey = 'components';
+        //     $componentPath = $this->componentFile;
+        // } else {
+        //     $sourceKey = array_shift($componentParts);
+        //     $componentPath = implode('/', $componentParts);
+        // }
+        
+        // Get component sources from config
+        $componentSources = config('componentstudio.component_sources', []);
+        $componentSource = null;
+
+        //Find the component
+        foreach($componentSources as $source){
+            // if file exists in this source path
+            if(file_exists($source['path'] . '/' . str_replace('.', '/', $this->componentFile) . '.blade.php')){
+                $componentLocation = $source['path'] . '/' . str_replace('.', '/', $this->componentFile);
+                $componentSource = $source;
+                break;
+            }
+        }
+        
+        // Build YAML file path
+        $component_yaml_path = $componentLocation . '.yml';
+        
+        if(!file_exists($component_yaml_path)){
+            $this->yaml = null;
+        } else {
+            
+            $this->yaml_file = file_get_contents($component_yaml_path);
+            $this->yaml = Yaml::parse($this->yaml_file);
+            if(!isset($this->yaml['props']['class'])){
+                $this->addClassProp();
+            }
+        }
+
+        $this->fillDefaultAttributeValues();
+        $this->loadAttributes();
+
+
+        $this->loadSlots($this->yaml);
+        $this->generateCode();
+        //dd($this->componentLocation);
+        //dd($this->code);
+
+    }
+
+    private function getComponentSourceName($path) {
+        $pathParts = explode('/', trim($path, '/'));
+        return ucfirst(end($pathParts));
+    }
+
+    private function resolveComponentPath($path) {
+        // If path is already absolute, return as-is
+        if (str_starts_with($path, '/')) {
+            return $path;
+        }
+        
+        // If path starts with base_path(), app_path(), resource_path(), etc., return as-is
+        if (str_contains($path, base_path()) || str_contains($path, app_path()) || str_contains($path, resource_path())) {
+            return $path;
+        }
+        
+        // Otherwise, treat as relative to project root
+        return base_path($path);
+    }
+
+    private function getComponentFilePath($componentFile) {
+        // Parse component source and path
+        $componentParts = explode('.', $componentFile);
         if(count($componentParts) < 2){
             $sourceKey = 'components';
-            $componentPath = $this->componentFile;
+            $componentPath = $componentFile;
         } else {
             $sourceKey = array_shift($componentParts);
             $componentPath = implode('/', $componentParts);
@@ -55,59 +126,22 @@ class ComponentStage extends Component
                 'name' => 'Components',
                 'path' => config('componentstudio.folder', 'views/components')
             ];
-            $componentPath = str_replace('.', '/', $this->componentFile);
+            $componentPath = str_replace('.', '/', $componentFile);
+            return resource_path($componentSource['path'] . '/' . $componentPath . '.blade.php');
         }
         
-        // Build YAML file path
-        $component_yaml_path = resource_path($componentSource['path'] . '/' . $componentPath . '.yml');
-
-        if(!file_exists($component_yaml_path)){
-            $this->yaml = null;
-            return;
-        }
-
-        $this->yaml_file = file_get_contents($component_yaml_path);
-        $this->yaml = Yaml::parse($this->yaml_file);
-        $this->componentLocation = $this->yaml['component'];
-        // dd('wtf');
-        // dd($this->componentLocation);
-
-        if(!isset($this->yaml['props']['class'])){
-            $this->addClassProp();
-        }
-
-        $this->fillDefaultAttributeValues();
-        $this->loadAttributes();
-
-
-        $this->loadSlots($this->yaml);
-        $this->generateCode();
-
-
-
-    }
-
-    private function getComponentSourceName($path) {
-        $pathParts = explode('/', trim($path, '/'));
-        return ucfirst(end($pathParts));
+        return $this->resolveComponentPath($componentSource['path']) . '/' . $componentPath . '.blade.php';
     }
 
     private function getComponentProps($componentFile){
-        $componentFile = str_replace('.', '/', $componentFile);
-        $fileContent = file_get_contents(resource_path(config('componentstudio.folder') . $componentFile . '.blade.php'));
+        $componentPath = $this->getComponentFilePath($componentFile);
+        if (!file_exists($componentPath)) return null;
+        
+        $fileContent = file_get_contents($componentPath);
         preg_match_all('/@props\((.*?)\)/s', $fileContent, $matches);
         if($matches[1] == null) return null;
         $propsData = $matches[1][0];
         return json_decode($this->convertRawArrayStringToJSON($propsData));
-    }
-
-    private function getStudioData($componentFile){
-        $componentFile = str_replace('.', '/', $componentFile);
-        $fileContent = file_get_contents(resource_path(config('componentstudio.folder') . $componentFile . '.blade.php'));
-        preg_match_all('/@studio\((.*?)\)/s', $fileContent, $matches);
-        if($matches[1] == null) return null;
-        $studioData = $matches[1][0];
-        return json_decode($this->convertRawArrayStringToJSON($studioData));
     }
 
     private function convertRawArrayStringToJSON($str) {
@@ -167,7 +201,8 @@ class ComponentStage extends Component
     }
 
     public function generateCode(){
-        $tag = 'x-'.$this->componentLocation;
+        //dd($this->componentLocation);
+        $tag = 'x-'.$this->componentFile;
         $this->code = "<".$tag;
         if($this->attributeArray != null){
             $componentBag = new \Illuminate\View\ComponentAttributeBag($this->attributeArray);
